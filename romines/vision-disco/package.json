@@ -1,0 +1,33 @@
+{
+  "name": "vision-disco",
+  "version": "0.0.0",
+  "description": "",
+  "author": "romines <adam.romines@gmail.com>",
+  "main": "functions/__main__.js",
+  "dependencies": {
+    "@google-cloud/vision": "^0.23.0",
+    "axios": "^0.18.0",
+    "axios-debug": "0.0.4",
+    "firebase": "^5.6.0",
+    "firebase-admin": "^6.3.0",
+    "uuid": "^3.3.2"
+  },
+  "private": true,
+  "stdlib": {
+    "build": "faaslang",
+    "name": "romines/vision-disco",
+    "timeout": 10000,
+    "publish": true,
+    "personalize": {
+      "keys": [],
+      "user": []
+    }
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "universe": "^0.8.1"
+  },
+  "eslintConfig": {
+    "extends": "universe/node"
+  }
+}
