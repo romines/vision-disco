@@ -25,6 +25,9 @@
   },
   "devDependencies": {
     "babel-eslint": "^10.0.1",
+    "eslint": "^5.9.0",
+    "eslint-config-universe": "^1.0.7",
+    "prettier": "^1.15.3",
     "universe": "^0.8.1"
   },
   "eslintConfig": {

@@ -58,7 +58,7 @@ export default class HomeScreen extends React.Component {
             />
           </TouchableOpacity>
           <Text style={styles.releasePageLinkText}>
-            Search Release by Album Cover
+            Search Release by Album Cover.z
           </Text>
         </View>
       </ScrollView>
@@ -117,25 +117,29 @@ export default class HomeScreen extends React.Component {
   _handleSnap = async () => {
     if (this.camera) {
       try {
+        // console.log('inside try');
         const photo = await this.camera.takePictureAsync();
         const fetched = await fetch(photo.uri);
         const blob = await fetched.blob();
         const filename = `${uuid.v4()}.jpg`;
         const ref = firebase
-        .storage()
-        .ref()
-        .child(filename);
+          .storage()
+          .ref()
+          .child(filename);
         const { metadata } = await ref.put(blob);
+        // const metadata = {
+        //   fullPath: 'db664d86-0913-4bde-8088-2ea6a826f931.jpg',
+        // };
         const stdLibResponse = await fetch(
           `https://romines.lib.id/vision-disco@dev?fileName=${
             metadata.fullPath
           }`
-          );
+        );
         const json = await stdLibResponse.json();
-        console.log(json);
+        // console.log(json);
         this.setState({ showCamera: false });
         //
-        // WebBrowser.openBrowserAsync(`https://www.discogs.com${uri}`);
+        WebBrowser.openBrowserAsync(`https://www.discogs.com${json.discogsResults[0].uri}`);
       } catch (e) {
         const error = `${e}`;
         alert(error.substr(0, 240));

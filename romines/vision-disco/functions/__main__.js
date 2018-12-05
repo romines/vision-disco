@@ -23,67 +23,60 @@ module.exports = async (
   const client = new vision.ImageAnnotatorClient();
 
   const bucketName = 'vision-testing-disco.appspot.com';
+  const imagePath = `gs://${bucketName}/${fileName}`;
 
-  return (
-    client
-      .webDetection(`gs://${bucketName}/${fileName}`)
-      .then(results => {
-        const webDetection = results[0].webDetection;
-        let bestGuess, discogPages;
+  const webDetectionResults = await client.webDetection(imagePath);
+  const webDetection = webDetectionResults[0].webDetection;
+  const results = {
+    bestGuess: null,
+    discogPages: null,
+  };
 
-        if (webDetection.bestGuessLabels.length) {
-          console.log(
-            `Best guess labels found: ${webDetection.bestGuessLabels.length}`
-          );
-          bestGuess = webDetection.bestGuessLabels.map(label => ({
-            text: label.label,
-            searchString: getSearchString(label.label),
-          }));
-        }
-        if (webDetection.pagesWithMatchingImages.length) {
-          discogPages = webDetection.pagesWithMatchingImages
-            .filter(page => page.url.includes('discogs.com'))
-            .map(page => page.url);
-        }
-        if ((!bestGuess.length && !discogPages.length) || bestGuess[0].text === 'album cover') {
-          return Promise.resolve({
-            error: 'No results found'
-          });
-        } else {
-          return Promise.resolve({
-            bestGuess,
-            discogPages,
-          });
-        }
-      })
-      .then(async (visionResults) => {
-        if (visionResults.bestGuess && visionResults.bestGuess[0].text !== 'album cover') {
-          try {
-            const discogsResults = await axios({
-              url: `https://api.discogs.com/database/search?q=${visionResults.bestGuess[0].searchString}&type=master&key=${
-                discogs.key
-              }&secret=${discogs.secret}`,
-              headers: {
-                'User-Agent': 'request',
-              },
-            });
+  if (webDetection.bestGuessLabels.length) {
+    console.log(
+      `Best guess labels found: ${webDetection.bestGuessLabels.length}`
+    );
+    results.bestGuess = webDetection.bestGuessLabels
+      .filter(label => label.label !== 'album cover')
+      .map(label => ({
+        text: label.label,
+        searchString: getSearchString(label.label),
+      }));
+  }
+  if (webDetection.pagesWithMatchingImages.length) {
+    results.discogPages = webDetection.pagesWithMatchingImages
+      .filter(page => page.url.includes('discogs.com'))
+      .map(page => page.url);
+  }
+  // if (!results.bestGuess.length && !results.discogPages.length) {
+  //   // do text detection
+  //   // const textDetection = await client.textDetection();
+  // }
 
-            visionResults.discogsResults = discogsResults.data.results.length ? discogsResults.data.results : [];
-
-          } catch (e) {
-            console.error(e);
-            return e;
-          }
-        }
-        return visionResults;
-      })
-      .catch(err => {
-        // console.error('ERROR:', err);
-        return err;
-      })
+  const discogsResults = await getDiscogsResultsByString(
+    results.bestGuess[0].text
   );
-
+  return { discogsResults };
 };
+
+async function getDiscogsResultsByString(str) {
+  try {
+    console.log('try getDiscogsResultsByString');
+    const discogsResults = await axios({
+      url: `https://api.discogs.com/database/search?q=${getSearchString(
+        str
+      )}&type=master&key=${discogs.key}&secret=${discogs.secret}`,
+      headers: {
+        'User-Agent': 'request',
+      },
+    });
+
+    return discogsResults.data.results;
+  } catch (e) {
+    console.error(e);
+    return e;
+  }
+}
 
 function getSearchString(str) {
   return str.replace(/ /g, '+');
